@@ -64,7 +64,7 @@ DEFINE_double(camera_fps, 15, "camera_fps");
 DEFINE_bool(do_undistortion, false, "do_undistortion");
 DEFINE_string(undistortion_save_dir, "./undistortion_result",
               "Directory to save undistored images.");
-DEFINE_string(save_dir, "./result",
+DEFINE_string(save_dir, "/apollo",
               "Directory to save result images with detections.");
 
 namespace apollo {
