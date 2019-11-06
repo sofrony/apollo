@@ -445,6 +445,8 @@ Status OnLanePlanning::Plan(
     const double current_time_stamp,
     const std::vector<TrajectoryPoint>& stitching_trajectory,
     ADCTrajectory* const ptr_trajectory_pb) {
+     AWARN<< stitching_trajectory.size();
+     AERROR << stitching_trajectory.size();
   auto* ptr_debug = ptr_trajectory_pb->mutable_debug();
   if (FLAGS_enable_record_debug) {
     ptr_debug->mutable_planning_data()->mutable_init_point()->CopyFrom(

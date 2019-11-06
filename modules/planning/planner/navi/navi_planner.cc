@@ -101,6 +101,7 @@ Status NaviPlanner::Plan(const TrajectoryPoint& planning_init_point,
                          Frame* frame, ADCTrajectory* ptr_computed_trajectory) {
   // NaviPlanner is only used in navigation mode based on the real-time relative
   // map.
+    AERROR << "OK";
   if (!FLAGS_use_navigation_mode) {
     std::string msg = "NaviPlanner is only used in navigation mode.";
     AERROR << msg;

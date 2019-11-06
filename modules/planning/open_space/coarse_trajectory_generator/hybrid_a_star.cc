@@ -641,6 +641,7 @@ bool HybridAStar::Plan(
   close_set_.clear();
   open_pq_ = decltype(open_pq_)();
   final_node_ = nullptr;
+  AERROR << sx<<sy<<ex<<ey;
 
   std::vector<std::vector<common::math::LineSegment2d>>
       obstacles_linesegments_vec;
