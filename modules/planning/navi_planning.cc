@@ -473,7 +473,6 @@ Status NaviPlanning::Plan(
     const double current_time_stamp,
     const std::vector<TrajectoryPoint>& stitching_trajectory,
     ADCTrajectory* const trajectory_pb) {
-    AERROR << stitching_trajectory.size();
   CHECK_NOTNULL(trajectory_pb);
   auto* ptr_debug = trajectory_pb->mutable_debug();
   if (FLAGS_enable_record_debug) {
