@@ -57,6 +57,7 @@ constexpr double kSpeedOptimizationFallbackCost = 2e4;
 constexpr double kStraightForwardLineCost = 10.0;
 }  // namespace
 
+#define ADEBUG AWARN
 LaneFollowStage::LaneFollowStage(const ScenarioConfig::StageConfig& config)
     : Stage(config) {}
 
