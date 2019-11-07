@@ -21,6 +21,7 @@
 #include "modules/common/time/time.h"
 #include "modules/planning/common/planning_context.h"
 #include "modules/planning/common/planning_gflags.h"
+#define ADEBUG AWARN
 
 namespace apollo {
 namespace planning {
