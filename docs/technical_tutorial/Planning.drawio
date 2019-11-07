@@ -1,1 +1,53 @@
-<mxfile host="www.draw.io" modified="2019-11-07T12:48:43.748Z" agent="Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:69.0) Gecko/20100101 Firefox/69.0" etag="kL0bNQ_7lSKb2kPVZ6yK" version="12.2.2" type="github" pages="1"><diagram id="8MK-IR9vR0DQ9DgmvjWs" name="Page-1">7Vnfc+I2EP5rmGkf0vFPTB4DSWhn0h6NL23vUdiKrURoPbJMoH99V1gO5mQ4JzcJ1wxPSJ92Lfnb/daSGPiTxWoqSZH/DinlA89JVwP/cuB5rh+4+KORdY1EQ68GMslSY7QFYvYvNaBj0IqltNwxVABcsWIXTEAImqgdjEgJT7tm98B3Zy1IRi0gTgi30b9ZqvIaHXnRFv+VsixvZnaH5/XIgjTG5k3KnKTw1IL8q4E/kQCqbi1WE8o1eQ0vtd/1ntHnhUkqVB8H8ufYi8OLlCyXMpkuH6KLuDpzzXssCa/MG8O8VCThSHq9bLVuuKApUmO6IFUOGQjCr7boWEIlUqondLC3tbkBKBB0EXygSq1NnEmlAKFcLbgZpSum/tHuv4Sm96U1crkyT9501qZTKgmPdAIc5Gad/sib+8Ph80gTNx8RwlkmsJ0gaRTNx/eM85ZrGtJRGiBus2sIL6GSCT1EqclSIjOqDtgFtZ0mtTWBid2UwoIquUYDSTlRbLmbj8SkdfZst408NkzwX5IIVh7MOBGCiQzRCSwKEJqJr1NC0ZXajWDfaIQHyLeitDcaSypxCQf5a0aDAHNq42RKUSPMp62u3dBgeUvTvvP9nN+N82p2R+fOWeE+3or1Oq/iM8/i/BiS2xeE/YHsTNzXiSWwxdJJ1VG1EVhx0oKoFEUwVkwleS2Tz5I84DcIzJR9dNKuTfsJf0+dnEc7InEdWyVeEHaoJHwjldjsf2SV7M/+Hirx30klhxbZVgnhSYVTa51cS9CfD+eT2V1g85JhU+CLH1UsljI6QtRbLNGxxTI8icXvKZbwmGLx7e1WNecsQewWSIo/m+2XztMLzYOEhJalfn1MXyIZbPAh1zqZS2xlunVDBL0GzuEpbswsG/wlCwzjWMzLwvhMciIyekkTPGvJb7tcLShyK5L1rOL8Ewqo/2x/bM5ksZKUqrvPlRT9XceYC79p6Zb4jWUg7gSyorBN0/4P+QsPdmpG5CN+sft7aYcLkU6hv0usoIix4LxqlbiRuL9nyY0uGLPvc2/Nf6v7L+P8C6M81a+xdfnf1urQ3939B3at9n3frtXu+Vvt/0enYh32LNbRMYt1eCrWp2J9KtZHLNZBx8b6nYu1a59v4oLSjfolIDf2OeajF++oZ/F2ne5Yv0/1tm+4GymlbNloaUqxfNcnVSuqtTHO3bLveMRPE1mxcnMT1NNDl50CHX7u7dFZBDpdP4ryo477p07lR28mfMdKoAkI5Iq/6ma8ff/9YzDuesOvbsZHYcfV+Ghokx6+nHTsbv/z2oy1/jn0r/4D</diagram></mxfile>
+<mxfile host="www.draw.io" modified="2019-11-07T12:57:18.506Z" agent="Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:69.0) Gecko/20100101 Firefox/69.0" etag="kbPaTE8k0s4pGuHI2KMS" version="12.2.2" type="github" pages="1">
+  <diagram id="8MK-IR9vR0DQ9DgmvjWs" name="Page-1">
+    <mxGraphModel dx="1341" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="aQB2S5AdavvrcGvj7ASu-17" value="obstacles" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;strokeColor=#82b366;strokeWidth=3;align=center;fillColor=#d5e8d4;" parent="1" source="aQB2S5AdavvrcGvj7ASu-1" target="aQB2S5AdavvrcGvj7ASu-4" edge="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="aQB2S5AdavvrcGvj7ASu-1" value="Planning Component" style="text;html=1;strokeColor=#82b366;strokeWidth=5;fillColor=#d5e8d4;align=center;" parent="1" vertex="1">
+          <mxGeometry x="144.5" y="20" width="150" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="UBhuPUeb0-p1kRnyyhuS-2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" source="aQB2S5AdavvrcGvj7ASu-4" target="UBhuPUeb0-p1kRnyyhuS-1" edge="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="aQB2S5AdavvrcGvj7ASu-4" value="Compute Stitching Trajectory" style="text;html=1;strokeWidth=3;strokeColor=#82b366;fillColor=#d5e8d4;align=center;" parent="1" vertex="1">
+          <mxGeometry x="97" y="100" width="245" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="UBhuPUeb0-p1kRnyyhuS-4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" source="UBhuPUeb0-p1kRnyyhuS-1" target="UBhuPUeb0-p1kRnyyhuS-3" edge="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="UBhuPUeb0-p1kRnyyhuS-1" value="Calculate Front Obstacle Distance" style="text;html=1;strokeWidth=3;strokeColor=#82b366;fillColor=#d5e8d4;align=center;" parent="1" vertex="1">
+          <mxGeometry x="97" y="170" width="245" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="UBhuPUeb0-p1kRnyyhuS-6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" source="UBhuPUeb0-p1kRnyyhuS-3" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="220" y="470" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="UBhuPUeb0-p1kRnyyhuS-3" value="Public Road Planner: process scenario:&lt;br&gt;LaneFollowScenario&lt;br&gt;&amp;nbsp;LaneChangeDecider&lt;br&gt;&amp;nbsp;EmergencyPullOverScenario&lt;br&gt;&amp;nbsp;NarrowStreetUTurnScenario&lt;br&gt;&amp;nbsp;BareIntersectionUnprotectedScenario&lt;br&gt;&amp;nbsp;ValetParkingScenario&lt;br&gt;&amp;nbsp;ParkAndGoScenario&lt;br&gt;&amp;nbsp;StopSignUnprotectedScenario&lt;br&gt;&amp;nbsp;TrafficLightProtectedScenario&lt;br&gt;&amp;nbsp;TrafficLightUnprotectedRightTurnScenario&lt;br&gt;&amp;nbsp;YieldSignScenario" style="text;html=1;strokeWidth=3;strokeColor=#82b366;fillColor=#d5e8d4;align=center;" parent="1" vertex="1">
+          <mxGeometry x="53" y="240" width="333" height="190" as="geometry"/>
+        </mxCell>
+        <mxCell id="MDV8DbAGZ1pB6t4wkKEl-2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" edge="1" parent="1" source="UBhuPUeb0-p1kRnyyhuS-7" target="MDV8DbAGZ1pB6t4wkKEl-1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="UBhuPUeb0-p1kRnyyhuS-7" value="&lt;div&gt;Generate Speed Profile&lt;/div&gt;&lt;div&gt;(Cruising&lt;/div&gt;&lt;div&gt;Stopping)&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;" style="text;html=1;strokeWidth=3;strokeColor=#82b366;fillColor=#d5e8d4;align=center;" parent="1" vertex="1">
+          <mxGeometry x="53" y="470" width="333" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="MDV8DbAGZ1pB6t4wkKEl-4" value="Speed Profile" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fillColor=#d5e8d4;strokeColor=#82b366;" edge="1" parent="1" source="MDV8DbAGZ1pB6t4wkKEl-1" target="UBhuPUeb0-p1kRnyyhuS-10">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="219.5" y="770" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="MDV8DbAGZ1pB6t4wkKEl-1" value="Generate Smooth Trajectory" style="text;html=1;strokeWidth=3;strokeColor=#82b366;fillColor=#d5e8d4;align=center;" vertex="1" parent="1">
+          <mxGeometry x="111.5" y="580" width="216" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="UBhuPUeb0-p1kRnyyhuS-10" value="Control Component" style="text;html=1;strokeWidth=5;strokeColor=#82b366;fillColor=#d5e8d4;align=center;" parent="1" vertex="1">
+          <mxGeometry x="126.5" y="690" width="186" height="50" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
