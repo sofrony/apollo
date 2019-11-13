@@ -100,14 +100,13 @@ bool Proc(CloudOS1 &cloud, double m_time, uint64_t seq) {
         return false;
     }
     point_cloud_out->Clear();
-    apollo::drivers::PointXYZIT* cyber_point = point_cloud_out->add_point();
     for (const auto& it: cloud) {
-	    if (!it.x) continue;
+        apollo::drivers::PointXYZIT* cyber_point = point_cloud_out->add_point();
         cyber_point->set_timestamp(Time::Now().ToSecond());
         cyber_point->set_x(it.x);
         cyber_point->set_y(it.y);
         cyber_point->set_z(it.z);
-        cyber_point->set_intensity(0);
+        cyber_point->set_intensity(it.intensity);
     }
     point_cloud_out->set_measurement_time(m_time);
     point_cloud_out->mutable_header()->set_frame_id("velodyne");
