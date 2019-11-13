@@ -98,7 +98,9 @@ std::function<void(const uint8_t*, iterator_type it)> batch_to_iter(
             const bool valid = OS1::col_valid(col_buf) == 0xffffffff;
 
             // drop invalid / out-of-bounds data in case of misconfiguration
-            if (!valid || m_id >= W || f_id + 1 == cur_f_id) continue;
+            if (!valid || m_id >= W || f_id + 1 == cur_f_id) {
+                continue;
+            }
 
             if (f_id != cur_f_id) {
                 // if not initializing with first packet

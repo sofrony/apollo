@@ -31,6 +31,10 @@ namespace OS1 = ouster::OS1;
 
 using PointOS1 = ouster::OS1::PointOS1;
 using CloudOS1 = pcl::PointCloud<PointOS1>;
+using namespace apollo::cyber;
+using namespace apollo::drivers;
+using namespace apollo::cyber::base;
+using Points = Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>;
 
 const std::vector<double> beam_altitude_angles = {
     16.611,  16.084,  15.557,  15.029,  14.502,  13.975,  13.447,  12.920,
@@ -63,62 +67,86 @@ uint64_t imu_ts = 0;
 float lidar_col_0_h_angle = 0.0;
 float imu_av_z = 0.0;
 float imu_la_y = 0.0;
+std::shared_ptr<Writer<PointCloud>> writer_;
+std::shared_ptr<CCObjectPool<PointCloud>> point_cloud_pool_ = nullptr;
+int pool_size_ = 8;
+
+bool Init() {
+    std::shared_ptr<apollo::cyber::Node> node_(apollo::cyber::CreateNode("ouster_talker"));
+    writer_ = node_->CreateWriter<PointCloud>("/apollo/sensor/lidar128/compensator/PointCloud2");
+    point_cloud_pool_.reset(new CCObjectPool<PointCloud>(pool_size_));
+    point_cloud_pool_->ConstructAll();
+    for (int i = 0; i < pool_size_; i++) {
+        auto point_cloud = point_cloud_pool_->GetObject();
+        if (point_cloud == nullptr) {
+            AERROR << "fail to getobject, i: " << i;
+            return false;
+        }
+        point_cloud->mutable_point()->Reserve(140000);
+    }
+    AINFO << "Point cloud comp convert init success";
+    return true;
+}
+
+bool Proc(CloudOS1 &cloud, double m_time, uint64_t seq) {
+    std::shared_ptr<PointCloud> point_cloud_out = point_cloud_pool_->GetObject();
+    if (point_cloud_out == nullptr) {
+        AWARN << "poin cloud pool return nullptr, will be create new.";
+        point_cloud_out = std::make_shared<PointCloud>();
+        point_cloud_out->mutable_point()->Reserve(140000);
+    }
+    if (point_cloud_out == nullptr) {
+        AWARN << "point cloud out is nullptr";
+        return false;
+    }
+    point_cloud_out->Clear();
+    apollo::drivers::PointXYZIT* cyber_point = point_cloud_out->add_point();
+    for (const auto& it: cloud) {
+	    if (!it.x) continue;
+        cyber_point->set_timestamp(Time::Now().ToSecond());
+        cyber_point->set_x(it.x);
+        cyber_point->set_y(it.y);
+        cyber_point->set_z(it.z);
+        cyber_point->set_intensity(0);
+    }
+    point_cloud_out->set_measurement_time(m_time);
+    point_cloud_out->mutable_header()->set_frame_id("velodyne");
+    point_cloud_out->set_height(10);
+    point_cloud_out->set_frame_id("lidar128");
+    point_cloud_out->set_width(1024);
+    point_cloud_out->mutable_header()->set_sequence_num(seq);
+
+    if (point_cloud_out == nullptr || point_cloud_out->point().empty()) {
+        AWARN << "point_cloud_out convert is empty.";
+        return false;
+    }
+    writer_->Write(point_cloud_out);
+    return true;
+}
 
 
 int connection_loop(OS1::client& cli) {
+	std::ofstream file("lidar.bin", std::ios::binary);
 
-    //std::ofstream out;
-    //out.open("/apollo/lidar_buf.txt");
-
-    std::shared_ptr<apollo::cyber::Node> os_node(apollo::cyber::CreateNode("ouster_talker"));
-    auto os_talker = os_node->CreateWriter<apollo::drivers::PointCloud>("/apollo/poka_chto_ne_lidar");
-    
-    std::vector<uint8_t> lidar_packet, imu_packet;
-
-    lidar_packet.resize(OS1::lidar_packet_bytes + 1);
-    imu_packet.resize(OS1::imu_packet_bytes + 1);
-
+    double m_time;
+    uint64_t seq = 0;
     uint32_t H = OS1::pixels_per_column;
     uint32_t W = OS1::n_cols_of_lidar_mode(
         OS1::lidar_mode_of_string("1024x10"));
-
-    auto xyz_lut = OS1::make_xyz_lut(W, H, beam_azimuth_angles, beam_altitude_angles);
-
+    uint8_t lidar_buf[OS1::lidar_packet_bytes + 1];
+    const size_t n_points = W * H;
+    Points pc_render{n_points, 3};
+    auto metadata = OS1::get_metadata(cli);
+    auto info = OS1::parse_metadata(metadata);
+    auto xyz_lut = OS1::make_xyz_lut(W, H, info.beam_azimuth_angles, info.beam_altitude_angles);
+    Init();
     CloudOS1 cloud{W, H};
     auto it = cloud.begin();
-
-    //std::shared_ptr<apollo::cyber::base::CCObjectPool<apollo::drivers::PointCloud>> point_cloud_pool_ = nullptr;
-    
-    //std::shared_ptr<apollo::drivers::PointCloud> apollo_pc = point_cloud_pool_->GetObject();
-    //auto apollo_pc = std::shared_ptr<apollo::drivers::PointCloud>();
-    /*
-    apollo_pc->mutable_header()->set_timestamp_sec(apollo::cyber::Time::Now().ToSecond());
-    apollo_pc->mutable_header()->set_frame_id("ouster");
-    apollo_pc->mutable_header()->set_lidar_timestamp(apollo::cyber::Time::Now().ToSecond());
-    apollo_pc->set_measurement_time(apollo::cyber::Time::Now().ToSecond());
-    apollo_pc->set_height(1);
-    apollo_pc->set_width(11000);
-    apollo_pc->set_is_dense(true);
-    apollo_pc->mutable_point()->Reserve(240000);
-    */
-    auto batch_and_publish = OS1::batch_to_iter<CloudOS1::iterator>(
-                    xyz_lut, W, H, {}, &PointOS1::make,
-                    [&](uint64_t scan_ts) mutable {
-                        AERROR << "FFFFF";
-                        //for(int iii=0;iii<=11000;iii++){
-                            //apollo_pc->set_measurement_time(0);
-                            /*
-                            apollo::drivers::PointXYZIT* cyber_point = apollo_pc->add_point();
-                            cyber_point->set_timestamp(0);
-                            cyber_point->set_x(static_cast<float>(0.0));
-                            cyber_point->set_y(static_cast<float>(1.0));
-                            cyber_point->set_z(static_cast<float>(2.0));
-                            cyber_point->set_intensity(0);
-                            */
-                        //}
-                        //msg = cloud_to_cyber(cloud);
-                        //os_talker->Write(apollo_pc);
-                        });
+    auto batch_and_update = OS1::batch_to_iter<CloudOS1::iterator>(
+        xyz_lut, W, H, {},
+        &PointOS1::make, [&](uint64_t) {
+            Proc(cloud, m_time, seq++);
+        });
 
     while (apollo::cyber::OK()){
         auto state = OS1::poll_client(cli);
@@ -131,47 +159,24 @@ int connection_loop(OS1::client& cli) {
             return EXIT_FAILURE;
         }
         if (state & OS1::LIDAR_DATA) {
-            if (OS1::read_lidar_packet(cli, lidar_packet.data()))
-                //AERROR << "GOT LIDAR";
-                AERROR << lidar_packet.data();
-                batch_and_publish(lidar_packet.data(), it);
-        }
-        /*
-        if (state & OS1::IMU_DATA) {
-            if (OS1::read_imu_packet(cli, imu_packet.data()))
-                //AERROR << "GOT IMU";
-        }
-        */
+		if (OS1::read_lidar_packet(cli, lidar_buf)) {
+			file.write(const_cast<char*>(reinterpret_cast<char*>(lidar_buf)), OS1::columns_per_buffer * OS1::column_bytes);  
+			m_time = Time::Now().ToSecond();
+			batch_and_update(lidar_buf, it);
+		}
+	}
     }
-    return EXIT_SUCCESS;
+    return 0;
 }
 
 int main(int argc, char** argv) {
 
-    /*
-    if (argc != 3) {
-        std::cerr << "Usage: ouster_cyber <os1_hostname> "
-                     "<data_destination_ip>"
-                  << std::endl;
-        return 1;
-    }
-    */
-
     apollo::cyber::Init(argv[0]);
-
     auto cli = OS1::init_client("10.5.5.77", "10.5.5.1", OS1::lidar_mode_of_string("1024x10"), 7501, 7502);
-
     if (!cli) {
         std::cerr << "Failed to connect to client at: " << argv[1] << std::endl;
         return 1;
     }
-
-    auto metadata = OS1::get_metadata(*cli);
-    std::ofstream meta_out;
-    meta_out.open("/apollo/lidar_meta.txt");
-    meta_out << metadata;
-    meta_out.close();
-
     return connection_loop(*cli);
 
     return 0;
