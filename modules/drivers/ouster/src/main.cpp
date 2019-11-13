@@ -36,7 +36,7 @@ using namespace apollo::drivers;
 using namespace apollo::cyber::base;
 using Points = Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>;
 
-const std::vector<double> beam_altitude_angles = {
+std::vector<double> beam_altitude_angles = {
     16.611,  16.084,  15.557,  15.029,  14.502,  13.975,  13.447,  12.920,
     12.393,  11.865,  11.338,  10.811,  10.283,  9.756,   9.229,   8.701,
     8.174,   7.646,   7.119,   6.592,   6.064,   5.537,   5.010,   4.482,
@@ -47,7 +47,7 @@ const std::vector<double> beam_altitude_angles = {
     -12.920, -13.447, -13.975, -14.502, -15.029, -15.557, -16.084, -16.611,
 };
 
-const std::vector<double> beam_azimuth_angles = {
+std::vector<double> beam_azimuth_angles = {
     3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
     3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
     3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
@@ -125,8 +125,13 @@ bool Proc(CloudOS1 &cloud, double m_time, uint64_t seq) {
 }
 
 
-int connection_loop(OS1::client& cli) {
-	std::ofstream file("lidar.bin", std::ios::binary);
+int connection_loop(std::shared_ptr<OS1::client> cli, std::string filename) {
+    std::fstream file;
+    if (cli) {
+        file.open(filename, std::ios::binary  | file.out);
+	} else {
+        file.open(filename, std::ios::binary  | file.in);
+    }
 
     double m_time;
     uint64_t seq = 0;
@@ -134,11 +139,13 @@ int connection_loop(OS1::client& cli) {
     uint32_t W = OS1::n_cols_of_lidar_mode(
         OS1::lidar_mode_of_string("1024x10"));
     uint8_t lidar_buf[OS1::lidar_packet_bytes + 1];
-    const size_t n_points = W * H;
-    Points pc_render{n_points, 3};
-    auto metadata = OS1::get_metadata(cli);
-    auto info = OS1::parse_metadata(metadata);
-    auto xyz_lut = OS1::make_xyz_lut(W, H, info.beam_azimuth_angles, info.beam_altitude_angles);
+    if (cli) {
+        auto metadata = OS1::get_metadata(*cli);
+        auto info = OS1::parse_metadata(metadata);
+        beam_azimuth_angles = info.beam_azimuth_angles;
+        beam_altitude_angles = info.beam_altitude_angles;
+    }
+    auto xyz_lut = OS1::make_xyz_lut(W, H, beam_azimuth_angles, beam_altitude_angles);
     Init();
     CloudOS1 cloud{W, H};
     auto it = cloud.begin();
@@ -149,35 +156,53 @@ int connection_loop(OS1::client& cli) {
         });
 
     while (apollo::cyber::OK()){
-        auto state = OS1::poll_client(cli);
-        if (state == OS1::EXIT) {
-            AINFO << "poll_client: caught signal, exiting";
-            return EXIT_SUCCESS;
+        bool got = false;
+        if (cli) {
+            auto state = OS1::poll_client(*cli);
+            if (state == OS1::EXIT) {
+                AINFO << "poll_client: caught signal, exiting";
+                return EXIT_SUCCESS;
+            }
+            if (state & OS1::ERROR) {
+                AERROR << "poll_client: returned error";
+                return EXIT_FAILURE;
+            }
+            if (state & OS1::LIDAR_DATA) {
+                got = OS1::read_lidar_packet(*cli, lidar_buf);
+                if (file.is_open())  {
+                    file.write(const_cast<char*>(reinterpret_cast<char*>(lidar_buf)), OS1::columns_per_buffer * OS1::column_bytes);  
+                }
+            }
+        } else if (file.is_open()) {
+            got = nullptr != file.read(reinterpret_cast<char*>(lidar_buf), OS1::columns_per_buffer * OS1::column_bytes);
+            if (!got) {
+                file.close();
+                file.open(filename, std::ios::binary  | file.in);
+                got = nullptr != file.read(reinterpret_cast<char*>(lidar_buf), OS1::columns_per_buffer * OS1::column_bytes);
+            }
         }
-        if (state & OS1::ERROR) {
-            AERROR << "poll_client: returned error";
-            return EXIT_FAILURE;
+        if (got) {
+            m_time = Time::Now().ToSecond();
+            batch_and_update(lidar_buf, it);
         }
-        if (state & OS1::LIDAR_DATA) {
-		if (OS1::read_lidar_packet(cli, lidar_buf)) {
-			file.write(const_cast<char*>(reinterpret_cast<char*>(lidar_buf)), OS1::columns_per_buffer * OS1::column_bytes);  
-			m_time = Time::Now().ToSecond();
-			batch_and_update(lidar_buf, it);
-		}
-	}
     }
     return 0;
 }
 
 int main(int argc, char** argv) {
+    std::cout << "to save from lidar to buffer: "<< argv[0] << " lidar.bin save" <<std::endl;
+    std::cout << "to load from buffer instead of lidar: "<< argv[0] << " lidar.bin" <<std::endl;
 
     apollo::cyber::Init(argv[0]);
-    auto cli = OS1::init_client("10.5.5.77", "10.5.5.1", OS1::lidar_mode_of_string("1024x10"), 7501, 7502);
-    if (!cli) {
-        std::cerr << "Failed to connect to client at: " << argv[1] << std::endl;
-        return 1;
+    if (argc==1 || argc==3) {
+	    auto cli = OS1::init_client("10.5.5.77", "10.5.5.1", OS1::lidar_mode_of_string("1024x10"), 7501, 7502);
+	    if (!cli) {
+		    std::cerr << "Failed to connect to client."  << std::endl;
+		    return -1;
+	    }
+	    return connection_loop(cli, argv[1]);
     }
-    return connection_loop(*cli);
+    connection_loop(nullptr, argv[1]);
 
     return 0;
 }
