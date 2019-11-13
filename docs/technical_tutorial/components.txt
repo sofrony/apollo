@@ -1,0 +1,181 @@
+Apollo componets
+------------------------------------------
+CameraComponent
+FusionCameraDetectionComponent -> PerceptionObstacles
+    Perception  (obstacle_camera_perception.cc)
+        calibration_service->Update(frame);
+        tracker (OMTObstacleTracker)->Predict(tracker_options, frame) //for each target
+            image_center.Predict(delta_t);    //??? ExtendedKalmanFilter::Predict(VectorXd &z)
+        name_detector_map[YoloObstacleDetector]->Detect(detector_options, frame)
+            model.Infer()
+            TrackingFeatureExtractor //save frame.tracked_objects.camera_supplement.box
+        tracker-> Associate2D // for each target
+                CorrectSize() // from detection, calibration, history
+                GenerateHypothesis //map them
+                CreateNewTarget //if needed
+        transformer_ (MultiCueObstacleTransformer) ->Transform(options, frame)  //for each frame->detected_objects
+            Solve3dBbox, Solve3dBboxGivenOneFullBboxDimensionOrientation
+                GetScoreViaRotDimensionCenter //with ObjectTemplateManager, JaccardIndex (bbox, template projection)
+            FillResults //save camera_supplement.size, alpha, direction, center, center_uncertainty, theta_variance
+        obstacle_postprocessor_ (LocationRefinerObstaclePostprocessor)->Process(options, frame)
+            AdjustCenterWithGround //using GetProjectionScore
+            PostRefineCenterWithGroundBoundary
+        tracker-> Associate3D
+            if (move > sqr(omt_param_.abnormal_movement()) * dis) {RemoveOld(), CreateNewTarget();}
+            Update3D
+                obj_distance_to_main_car = x^2+z^2 =local_center[0]^2+local_center[2]^2
+                dis_err = target_param_.world_center().measure_variance() * obj_distance_to_main_car;
+                world_center.measure_noise_ *= dis_err;
+                world_center_const.Correct(z); z<<object->center(0), object->center(1);
+                world_center.MagicVelocity(vel);   //vel = (pose1 - pose2) / (ts1 - ts2) // from frames -2, -10
+
+        tracker-> Track(tracker_options, frame)
+        WriteDetections,WriteCamera2World,WriteTracking,FillObjectPolygonFromBBox3D
+Visualizer
+    yaw = static_cast<float>(atan2(sin(object->theta), cos(object->theta))));
+    rotate << cos(yaw), -sin(yaw), sin(yaw), cos(yaw);
+    points = rotate * (object->size(0) * 0.5, object->size(1) * 0.5) + (object->center(0), object->center(1));
+
+FusionComponent  //ProbabilisticFusion
+    HMTrackersObjectsAssociation.Associate
+        GatedHungarianMatcher.Match()
+        ComputeDistance
+            TrackObjectDistance::ComputeRadarCameraSimilarity
+                FuseMultipleProbabilities
+    PbfTracker  //Prob fusion tracker
+       existance_fusion_->UpdateWithMeasurement(measurement, target_timestamp, options.match_distance);
+       motion_fusion_->UpdateWithMeasurement(measurement, target_timestamp); //update velocity, acceleration, center and their uncertainty
+       shape_fusion_->UpdateWithMeasurement(measurement, target_timestamp);
+       type_fusion_->UpdateWithMeasurement(measurement, target_timestamp);
+       track_->UpdateWithSensorObject(measurement);
+    CreateNewTracks // if needed
+    CollectFusedObjects
+        PbfGatekeeper
+
+
+PredictionComponent  -> PredictionObstacles
+    OnLocalization
+    OnPlanning
+    OnPerception
+        ScenarioAnalyzer::Analyze
+            CruiseScenarioFeatures::BuildCruiseScenarioFeatures (lanes)
+            JunctionScenarioFeatures::BuildJunctionScenarioFeatures
+        BuildLaneGraph
+        RightOfWay::Analyze();
+        InsertFeatureProto
+            GetObstacleWithLRUUpdate
+            Obstacle::Create
+        EvaluatorManager::Run
+            SemanticMap::RunCurrFrame
+                    common::util::LRUCache<int, int> id_mapping_;
+                DrawBaseMap
+                    img_show_semantic_map, enable_async_draw_base_image
+                        "Demo window" with cv::Mat(2000, 2000, CV_8UC3, cv::Scalar(0, 0, 0));
+            EvaluateObstacle
+                PedestrianInteractionEvaluator::Evaluate
+                    torch_social_embedding_.forward  //not in use
+                    torch_prediction_layer(torch_single_lstm(torch_position_embedding_(trajectory)), torch_single_lstm(location))
+                LaneAggregatingEvaluator (torch)
+                LaneScanningEvaluator (torch)
+                CruiseMLPEvaluator (torch)
+                JunctionAnalyzer (overlapping, extends out - exits)
+                    BFS to find all connected exit lanes // int max_search_level = 6;
+        PredictorManager:Run
+            predictor->Predict //for VEHICLE, BICYCLE, PEDESTRIAN(RegionalPredictor)
+                RegionalPredictor::GenerateMovingTrajectory
+            TrimTrajectory
+
+PlanningComponent
+    OnLanePlanning
+        VehicleStateProvider::Update
+        if !status.ok()
+             ptr_trajectory_pb->set_gear(canbus::Chassis::GEAR_DRIVE);
+             FillPlanningPb(start_timestamp, ptr_trajectory_pb);
+             GenerateStopTrajectory(ptr_trajectory_pb); return;
+        TrajectoryStitcher::ComputeStitchingTrajectory
+        EgoInfo::Instance()->Update(stitching_trajectory.back(), vehicle_state);
+        EgoInfo::Instance()->CalculateFrontObstacleClearDistance( frame_->obstacles()); }
+        Plan(stitching_trajectory, ptr_trajectory_pb)
+            LatticePlanner,
+            NaviPlanner // real-time relative map
+                PlanOnReferenceLine
+            PublicRoadPlanner::Plan(stitching_trajectory.back(), frame_.get(), ptr_trajectory_pb);
+                scenario::Process(planning_start_point, frame);
+                    LaneFollowScenario
+                        LaneChangeDecider
+                    EmergencyPullOverScenario
+                    NarrowStreetUTurnScenario
+                    BareIntersectionUnprotectedScenario
+                    ValetParkingScenario
+                    ParkAndGoScenario
+                    StopSignUnprotectedScenario
+                    TrafficLightProtectedScenario
+                    TrafficLightUnprotectedRightTurnScenario
+                    YieldSignScenario
+
+            copy(best_ref_path.begin() + 1, best_ref_path.end(), std::back_inserter(current_frame_planned_path));
+        GenerateSpeedProfile
+            GenerateSpeedProfilesForCruising
+            GenerateSpeedProfilesForStopping
+            GenerateSpeedProfilesForPathTimeObstacles
+        FillPlanningPb
+        planning_smoother_.Smooth
+
+
+SegmentationComponent
+LaneDetectionComponent
+UDPBridgeSenderComponent<pb_msg>
+UDPBridgeReceiverComponent<pb_msg>
+GuardianComponent
+RoutingComponent
+Monitor
+ThirdPartyPerceptionComponent
+RelativeMapComponent
+MotionService
+TrafficLightsPerceptionComponent
+LidarOutputComponent
+RecognitionComponent
+RadarDetectionComponent
+CanbusComponent
+FakePredictionComponent
+ManualTrafficLight
+CompensatorComponent
+    MotionCompensation //set TransformStamped: translation,rotation
+ControlComponent
+RTKLocalizationComponent
+NDTLocalizationComponent
+MSFLocalizationComponent
+OnlineVisualizerComponent
+CompCameraH265Compressed
+CompressComponent
+GnssDriverComponent
+ContiRadarCanbusComponent
+RacobitRadarCanbusComponent
+UltrasonicRadarCanbusComponent
+PriSecFusionComponent
+VelodyneDriverComponent
+StaticTransformComponent
+VelodyneConvertComponent
+ImageDecompressComponent
+
+Play only camera from given record:
+    cyber_recorder play -f record.* -k /apollo/perception/obstacles -k /apollo/prediction -loop
+    mainboard -d /apollo/modules/perception/production/dag/dag_motion_service.dag
+    mainboard -d /apollo/modules/perception/production/dag/dag_streaming_perception_camera.dag
+
+Run perception offline:
+    bazel run //modules/perception/camera/tools/offline:offline_obstacle_pipeline
+
+Places where Perception() is used:     ObstacleCameraPerception::Perception(const CameraPerceptionOptions &options, CameraFrame *frame) { }
+    perception/onboard/component/fusion_camera_detection_component.cc      FusionCameraDetectionComponent::OnReceiveImage()   -> /apollo/perception/obstacles
+    iperception/camera/test/camera_app_obstacle_camera_perception_test.cc     EXPECT_TRUE(perception.Perception(options, &frame));
+    perception/camera/tools/offline/offline_obstacle_pipeline.cc              CHECK(perception.Perception(options, &frame));
+    planning/common/path_decision.cc                                         perception::PerceptionObstacle *PathDecision::FindPerceptionObstacle(
+    planning/navi/decider/navi_obstacle_decider.cc      NaviObstacleDecider::AddObstacleOffsetDirection,IsNeedFilterObstacle
+    planning/scenarios/stop_sign/unprotected/stage_pre_stop.cc    StopSignUnprotectedStagePreStop::AddWatchVehicle()
+    planning/tasks/deciders/path_decider/path_decider.cc     PathDecider::MakeStaticObstacleDecision()
+    planning/tasks/deciders/speed_bounds_decider/st_boundary_mapper.cc  STBoundaryMapper::GetOverlapBoundaryPoints
+    planning/tasks/deciders/speed_decider/speed_decider.cc SpeedDecider::CreateStopDecision(const Obstacle& obstacle),CreateOvertakeDecision,CheckStopForPedestrian()
+    planning/tasks/optimizers/road_graph/trajectory_cost.cc  TrajectoryCost::TrajectoryCost(const DpPolyPathConfig &config, const std::vector<const Obstacle *> &obstacles )
+    planning/traffic_rules/crosswalk.cc   Crosswalk::MakeDecisions, Crosswalk::CheckStopForObstacle(
+
