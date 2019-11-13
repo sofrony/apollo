@@ -200,7 +200,7 @@ int main(int argc, char** argv) {
 		    std::cerr << "Failed to connect to client."  << std::endl;
 		    return -1;
 	    }
-	    return connection_loop(cli, argv[1]);
+	    return connection_loop(cli, argc>2? argv[1] : "" );
     }
     connection_loop(nullptr, argv[1]);
 
