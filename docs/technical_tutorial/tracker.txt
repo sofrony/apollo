@@ -1,0 +1,18 @@
+Poposal: Tracker algorithm description
+1. Find all objects with YoloV3
+2. For each object collect features by color
+    RGB2HSV, build HUE histpgram with np.histogram
+3. Normolize (1/1920) and grayscale
+4. Get new points with Optical Flow (cv2.calcOpticalFlowPyrLK)
+5. if new_point - old > threshold then shift by prediction
+6. Hungarian algorithm
+    build distance matrix, map by threshold
+7. Update centers
+8. Forget too old objects
+9. Create new objects
+10. Do prediction
+    LSQR (qv regression)
+    LSTM (with normalization: -center, /maximum)
+11. Renorm HUE with PCA
+
+
