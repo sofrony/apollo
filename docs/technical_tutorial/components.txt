@@ -9,10 +9,23 @@ FusionCameraDetectionComponent -> PerceptionObstacles
         name_detector_map[YoloObstacleDetector]->Detect(detector_options, frame)
             model.Infer()
             TrackingFeatureExtractor //save frame.tracked_objects.camera_supplement.box
-        tracker-> Associate2D // for each target
-                CorrectSize() // from detection, calibration, history
+        tracker-> Associate2D // for each target //perception/production/data/perception/camera/models/omt_obstacle_tracker/config.pt
+                target.RemoveOld(frame_list_.OldestFrameId()); //remove for img_capability
+                ++target.lost_age;
+                Create new track object & ProjectBox
+                CorrectSize() // estimate size from detection, calibration, history, min & max template
                 GenerateHypothesis //map them
+                       float sa = ScoreAppearance(targets_[i], objects[j]);
+                       float sm = ScoreMotion(targets_[i], objects[j]);
+                       float ss = ScoreShape(targets_[i], objects[j]);
+                       float so = ScoreOverlap(targets_[i], objects[j]);
+                        hypo.score = omt_param_.weight_same_camera().shape() * ss + .. - kTypeAssociatedCost_[change_from_type][change_to_type]
+                        match = (sm < 0.045 || hypo.score < omt_param_.target_thresh())
                 CreateNewTarget //if needed
+                CombineDuplicateTargets
+                ClearTargets
+                ProjectBox && RefineBox
+
         transformer_ (MultiCueObstacleTransformer) ->Transform(options, frame)  //for each frame->detected_objects
             Solve3dBbox, Solve3dBboxGivenOneFullBboxDimensionOrientation
                 GetScoreViaRotDimensionCenter //with ObjectTemplateManager, JaccardIndex (bbox, template projection)
@@ -162,6 +175,11 @@ Play only camera from given record:
     cyber_recorder play -f record.* -k /apollo/perception/obstacles -k /apollo/prediction -loop
     mainboard -d /apollo/modules/perception/production/dag/dag_motion_service.dag
     mainboard -d /apollo/modules/perception/production/dag/dag_streaming_perception_camera.dag
+     mainboard -d modules/drivers/tools/image_decompress/dag/image_decompress.dag
+     mainboard -d /apollo/modules/transform
+
+Turn on planning debug:
+    modules/planning/conf/planning.conf: add --v=4
 
 Run perception offline:
     bazel run //modules/perception/camera/tools/offline:offline_obstacle_pipeline
